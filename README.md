@@ -1,5 +1,10 @@
+libSBOLpy: Python wrapper for libSBOLc
+======================================
+
+[libSBOLpy](https://github.com/SynBioDex/libSBOLpy) is a wrapper around [libSBOLc](https://github.com/SynBioDex/libSBOLc), the C library for the [Synthetic Biology Open Language (SBOL)](http://www.sbolstandard.org/).
+
 Getting Started
-===============
+---------------
 
 To use SBOL in your own code, copy the <code>sbol</code> folder somewhere on your <code>PYTHONPATH</code>. Then you can start writing:
 
