@@ -31,7 +31,7 @@ To use SBOL in your own code, copy the <code>sbol</code> folder somewhere on you
     # write to file
     doc.write('valid04_dna_component_annotation.xml')
 
-Note: if you try to <code>import sbol</code> and the interpreter crashes with an error like "Py_GetThreadedState...", you're probably using the wrong Python version. There are downloads available for Python 2.5, 2.6, and 2.7.
+Note: if you try to <code>import sbol</code> and the interpreter crashes with an error like "Py_GetThreadedState...", you're probably using the wrong Python version. libSBOLpy currently works with Python 2.6 and 2.7.
 
 You can also access the low-level wrapper directly:
 
