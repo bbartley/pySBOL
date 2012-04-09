@@ -1,7 +1,6 @@
 import libsbol
 import sys
 from cStringIO import StringIO
-import weakref
 
 class SBOLError(Exception):     'Problem with SBOL'
 class InternalError(SBOLError): 'Encountered a bug'
@@ -15,56 +14,11 @@ __all__ = (
     'URIError',
     'PositionError',
     'StrandError',
+    'Document',
     'DNASequence',
     'SequenceAnnotation',
     'DNAComponent',
     'Collection' )
-
-class SBOLObjectRegistry(object):
-    '''
-    Each SBOL object has a ptr attribute that lets
-    you get the SWIG pointer to it. But since pointers are
-    read-only (and unhashable), you need a workaround
-    to go the other way, from pointer --> object.
-    '''
-
-    def __init__(self):
-        # todo rename to something with ref in it
-        self.sbol_objects = []
-
-    def __str__(self):
-        output = []
-        output.append('[')
-        for ref in self.sbol_objects[:-1]:
-            if ref != None:
-                output.append( ref().__repr__() )
-                output.append(', ')
-        output.append(self.sbol_objects[-1]().__repr__())
-        output.append(']')
-        return ''.join(output)
-
-    def add(self, obj):
-        '''
-        Create and store a weak reference to obj. It works
-        like a regular reference, except it doesn't prevent
-        obj from being garbage collected. That's important
-        because otherwise obj.__del__ would never be called.
-        Plus, when obj is garbage collected the callback
-        will remove the ref.
-        '''
-        callback = self.sbol_objects.remove
-        ref = weakref.ref(obj, callback)
-        self.sbol_objects.append(ref)
-
-    def find(self, ptr):
-        'Get the SBOL object pointed to by ptr.'
-        for ref in self.sbol_objects:
-            obj = ref()
-            if obj.ptr == ptr:
-                return obj
-        return None
-
-ALL_SBOL_OBJECTS = SBOLObjectRegistry()
 
 def capture_stdout(fn, *args, **kwargs):
     '''
@@ -82,25 +36,23 @@ def capture_stdout(fn, *args, **kwargs):
 
 class SBOLObjectArray(object):
     '''
-    Wrapper around a libSBOLc PointerArray.
-    It behaves like a standard Python list,
-    but only for those operations a PointerArray
-    supports. Notably, remove() hasn't been
-    implemented yet.
+    Like an ExtendableSBOLObjectArray, except it can't
+    be added to manually. It's used as a proxy for the PointerArrays
+    in a Document, which are automatically edited when SBOL objects
+    are created or destroyed.
     '''
 
-    def __init__(self, ptr, add, num, nth):
+    def __init__(self, obj, num, nth):
+        self.ptr = obj.ptr
+        if isinstance(obj, Document):
+            self.doc = obj
+        else:
+            self.doc = obj.doc
+
         # Each type of SBOL object has its own array functions,
         # which need to be set for the wrapper to work.
-        self.ptr        = ptr
-        self.add_fn     = add
         self.get_num_fn = num
         self.get_nth_fn = nth
-
-        # These references aren't used for anything so far,
-        # but they keep Python from garbage collecting the
-        # objects corresponding to pointers in the array.
-        self.refs = set()
 
     def __len__(self):
         "implements 'len(array)'"
@@ -122,7 +74,7 @@ class SBOLObjectArray(object):
         if index >= num:
             raise IndexError
         ptr = self.get_nth_fn(self.ptr, index)
-        obj = ALL_SBOL_OBJECTS.find(ptr)
+        obj = self.doc._proxy(ptr)
         return obj
 
     def __getslice__(self, *indices):
@@ -134,7 +86,7 @@ class SBOLObjectArray(object):
         num = self.get_num_fn(self.ptr)
         for n in range(num):
             ptr = self.get_nth_fn(self.ptr, n)
-            obj = ALL_SBOL_OBJECTS.find(ptr)
+            obj = self.doc._proxy(ptr)
             yield obj
 
     def __contains__(self, obj):
@@ -143,23 +95,6 @@ class SBOLObjectArray(object):
             if candidate_obj == obj:
                 return True
         return False
-
-    def __iadd__(self, obj):
-        "implements 'array += obj'"
-        if obj in self:
-            raise SBOLError('Duplicate obj %s' % obj)
-        self.refs.add(obj)
-        self.add_fn(self.ptr, obj.ptr)
-        return self
-
-    def append(self, obj):
-        "implements 'array.append(obj)'"
-        self.__iadd__(obj)
-
-    def __extend__(self, obj_list):
-        "implements 'array += obj_list'"
-        for obj in obj_list:
-            self += obj
 
     def __str__(self):
         "implements 'print array'"
@@ -178,19 +113,125 @@ class SBOLObjectArray(object):
         "implements 'array' (print in the interpreter)"
         return self.__str__()
 
+class ExtendableSBOLObjectArray(SBOLObjectArray):
+    '''
+    Wrapper around a libSBOLc PointerArray.
+    It behaves like a standard Python list,
+    but only for those operations a PointerArray
+    supports. Notably, remove() hasn't been
+    implemented yet.
+    '''
+
+    def __init__(self, obj, add, num, nth):
+        SBOLObjectArray.__init__(self, obj, num, nth)
+        self.add_fn = add
+
+    def __iadd__(self, obj):
+        "implements 'array += obj'"
+        if obj in self:
+            raise SBOLError('Duplicate obj %s' % obj)
+        self.add_fn(self.ptr, obj.ptr)
+        return self
+
+    def append(self, obj):
+        "implements 'array.append(obj)'"
+        self.__iadd__(obj)
+
+    def __extend__(self, obj_list):
+        "implements 'array += obj_list'"
+        for obj in obj_list:
+            self += obj
+
+class Document(object):
+    'Wrapper around a libSBOLc Document'
+    
+    def __init__(self):
+        # create document
+        self.ptr = libsbol.createDocument()
+
+        # create sequences array
+        fns = (libsbol.getNumDNASequences,
+               libsbol.getNthDNASequence)
+        self.sequences = SBOLObjectArray(self, *fns)
+
+        # create annotations array
+        fns = (libsbol.getNumSequenceAnnotations,
+               libsbol.getNthSequenceAnnotation)
+        self.annotations = SBOLObjectArray(self, *fns)
+
+        # create components array
+        fns = (libsbol.getNumDNAComponents,
+               libsbol.getNthDNAComponent)
+        self.components = SBOLObjectArray(self, *fns)
+
+        # create collections array
+        fns = (libsbol.getNumCollections,
+               libsbol.getNthCollection)
+        self.collections = SBOLObjectArray(self, *fns)
+
+        # create lists of Python proxy objects to keep them
+        # from being garbage collected, and for looking up
+        # objects from SWIG pointers
+        self._sequences   = []
+        self._annotations = []
+        self._components  = []
+        self._collections = []
+
+    def __str__(self):
+        return capture_stdout(libsbol.printDocument, self.ptr)
+
+    def read(self, filename):
+        libsbol.readDocument(self.ptr, filename)
+
+    def write(self, filename):
+        libsbol.writeDocument(self.ptr, filename)
+
+    @property
+    def num_sbol_objects(self):
+        return len(self.sequences)   \
+             + len(self.annotations) \
+             + len(self.components)  \
+             + len(self.collections)
+
+    @property
+    def uris(self):
+        output = []
+        for array in (self._sequences,
+                      self._annotations,
+                      self._components,
+                      self._collections):
+            for obj in array:
+                output.append(obj.uri)
+        return output
+
+    def _proxy(self, ptr):
+        'Find the Python proxy for an unknown pointer'
+        for array in (self._sequences,
+                      self._annotations,
+                      self._components,
+                      self._collections):
+            for obj in array:
+                if obj.ptr == ptr:
+                    return obj
+        return None
+
 class DNASequence(object):
     'Wrapper around a libSBOLc DNASequence'
     
-    def __init__(self, uri):
-        object.__init__(self)
-        self.ptr = libsbol.createDNASequence(uri)
-        if not self.ptr:
+    def __init__(self, doc, uri):
+        # create the C object
+        self.ptr = libsbol.createDNASequence(doc.ptr, uri)
+        if self.ptr == None:
             raise URIError("Duplicate URI '%s'" % uri)
-        ALL_SBOL_OBJECTS.add(self)
+
+        # register the Python proxy
+        self.doc = doc
+        self.doc._sequences.append(self)
 
     def __del__(self):
         if self.ptr:
             libsbol.deleteDNASequence(self.ptr)
+        self.doc._sequences.remove(self)
 
     def __str__(self):
         return capture_stdout(libsbol.printDNASequence, self.ptr, 0)
@@ -213,24 +254,27 @@ class DNASequence(object):
 class SequenceAnnotation(object):
     'Wrapper around a libSBOLc SequenceAnnotation'
     
-    def __init__(self, uri):
-        object.__init__(self)
-        self.ptr = libsbol.createSequenceAnnotation(uri)
-        if not self.ptr:
+    def __init__(self, doc, uri):
+        # create the C object
+        self.ptr = libsbol.createSequenceAnnotation(doc.ptr, uri)
+        if self.ptr == None:
             raise URIError("Duplicate URI '%s'" % uri)
-        ALL_SBOL_OBJECTS.add(self)
+
+        # register the Python proxy
+        self.doc = doc
+        self.doc._annotations.append(self)
+
+        # finish the Python proxy
+        self.doc._annotations.append(self)
         fns = (libsbol.addPrecedesRelationship,
                libsbol.getNumPrecedes,
                libsbol.getNthPrecedes)
-        self.precedes = SBOLObjectArray(self.ptr, *fns)
-
-        # This prevents the Python proxies of C structs pointed to
-        # by this SequenceAnnotation from being garbage collected.
-        self.refs = set()
+        self.precedes = ExtendableSBOLObjectArray(self, *fns)
 
     def __del__(self):
         if self.ptr:
             libsbol.deleteSequenceAnnotation(self.ptr)
+        self.doc._annotations.remove(self)
 
     def __str__(self):
         return capture_stdout(libsbol.printSequenceAnnotation, self.ptr, 0)
@@ -273,7 +317,7 @@ class SequenceAnnotation(object):
     @property
     def subcomponent(self):
         ptr = libsbol.getSequenceAnnotationSubComponent(self.ptr)
-        return ALL_SBOL_OBJECTS.find(ptr)
+        return self.doc._proxy(ptr)
 
     @start.setter
     def start(self, index):
@@ -306,29 +350,30 @@ class SequenceAnnotation(object):
     @subcomponent.setter
     def subcomponent(self, com):
         libsbol.setSequenceAnnotationSubComponent(self.ptr, com.ptr)
-        self.refs.add(com)
 
 class DNAComponent(object):
     'Wrapper around a libSBOLc DNAComponent'
 
-    def __init__(self, uri):
-        object.__init__(self)
-        self.ptr = libsbol.createDNAComponent(uri)
-        if not self.ptr:
+    def __init__(self, doc, uri):
+        # create the C object
+        self.ptr = libsbol.createDNAComponent(doc.ptr, uri)
+        if self.ptr == None:
             raise URIError("Duplicate URI '%s'" % uri)
-        ALL_SBOL_OBJECTS.add(self)
+
+        # register the Python proxy
+        self.doc = doc
+        self.doc._components.append(self)
+
+        # finish the Python proxy
         fns = (libsbol.addSequenceAnnotation,
                libsbol.getNumSequenceAnnotationsFor,
                libsbol.getNthSequenceAnnotationFor)
-        self.annotations = SBOLObjectArray(self.ptr, *fns)
-
-        # This prevents the Python proxies of C structs pointed to
-        # by this DNAComponent from being garbage collected.
-        self.refs = set()
+        self.annotations = ExtendableSBOLObjectArray(self, *fns)
 
     def __del__(self):
         if self.ptr:
             libsbol.deleteDNAComponent(self.ptr)
+        self.doc._components.remove(self)
 
     def __str__(self):
         return capture_stdout(libsbol.printDNAComponent, self.ptr, 0)
@@ -355,7 +400,7 @@ class DNAComponent(object):
     @property
     def sequence(self):
         ptr = libsbol.getDNAComponentSequence(self.ptr)
-        return ALL_SBOL_OBJECTS.find(ptr)
+        return self.doc._proxy(ptr)
 
     @display_id.setter
     def display_id(self, displayid):
@@ -372,25 +417,30 @@ class DNAComponent(object):
     @sequence.setter
     def sequence(self, seq):
         libsbol.setDNAComponentSequence(self.ptr, seq.ptr)
-        self.refs.add(seq)
 
 class Collection(object):
     'Wrapper around a libSBOLc Collection'
 
-    def __init__(self, uri):
-        object.__init__(self)
-        self.ptr = libsbol.createCollection(uri)
-        if not self.ptr:
+    def __init__(self, doc, uri):
+        # create the C object
+        self.ptr = libsbol.createCollection(doc.ptr, uri)
+        if self.ptr == None:
             raise URIError("Duplicate URI '%s'" % uri)
-        ALL_SBOL_OBJECTS.add(self)
+
+        # register the Python proxy
+        self.doc = doc
+        self.doc._collections.append(self)
+
+        # finish the Python proxy
         fns = (libsbol.addDNAComponentToCollection,
                libsbol.getNumDNAComponentsIn,
                libsbol.getNthDNAComponentIn)
-        self.components = SBOLObjectArray(self.ptr, *fns)
+        self.components = ExtendableSBOLObjectArray(self, *fns)
 
     def __del__(self):
         if self.ptr:
             libsbol.deleteCollection(self.ptr)
+        self.doc._collections.remove(self)
 
     def __str__(self):
         return capture_stdout(libsbol.printCollection, self.ptr, 0)

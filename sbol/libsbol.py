@@ -70,6 +70,10 @@ STRAND_FORWARD = _libsbol.STRAND_FORWARD
 STRAND_BIDIRECTIONAL = _libsbol.STRAND_BIDIRECTIONAL
 STRAND_REVERSE = _libsbol.STRAND_REVERSE
 
+def createDocument():
+  return _libsbol.createDocument()
+createDocument = _libsbol.createDocument
+
 def createDNASequence(*args):
   return _libsbol.createDNASequence(*args)
 createDNASequence = _libsbol.createDNASequence
@@ -85,6 +89,10 @@ createCollection = _libsbol.createCollection
 def createSequenceAnnotation(*args):
   return _libsbol.createSequenceAnnotation(*args)
 createSequenceAnnotation = _libsbol.createSequenceAnnotation
+
+def deleteDocument(*args):
+  return _libsbol.deleteDocument(*args)
+deleteDocument = _libsbol.deleteDocument
 
 def deleteDNASequence(*args):
   return _libsbol.deleteDNASequence(*args)
@@ -146,13 +154,13 @@ def getCollectionDescription(*args):
   return _libsbol.getCollectionDescription(*args)
 getCollectionDescription = _libsbol.getCollectionDescription
 
-def getNthDNASequence(*args):
-  return _libsbol.getNthDNASequence(*args)
-getNthDNASequence = _libsbol.getNthDNASequence
-
 def getDNASequence(*args):
   return _libsbol.getDNASequence(*args)
 getDNASequence = _libsbol.getDNASequence
+
+def getNthDNASequence(*args):
+  return _libsbol.getNthDNASequence(*args)
+getNthDNASequence = _libsbol.getNthDNASequence
 
 def getDNAComponentSequence(*args):
   return _libsbol.getDNAComponentSequence(*args)
@@ -198,16 +206,16 @@ def getNthCollection(*args):
   return _libsbol.getNthCollection(*args)
 getNthCollection = _libsbol.getNthCollection
 
-def getNumSBOLObjects():
-  return _libsbol.getNumSBOLObjects()
+def getNumSBOLObjects(*args):
+  return _libsbol.getNumSBOLObjects(*args)
 getNumSBOLObjects = _libsbol.getNumSBOLObjects
 
 def isSBOLObjectURI(*args):
   return _libsbol.isSBOLObjectURI(*args)
 isSBOLObjectURI = _libsbol.isSBOLObjectURI
 
-def getNumDNASequences():
-  return _libsbol.getNumDNASequences()
+def getNumDNASequences(*args):
+  return _libsbol.getNumDNASequences(*args)
 getNumDNASequences = _libsbol.getNumDNASequences
 
 def isDNASequenceURI(*args):
@@ -222,8 +230,8 @@ def isSequenceAnnotationURI(*args):
   return _libsbol.isSequenceAnnotationURI(*args)
 isSequenceAnnotationURI = _libsbol.isSequenceAnnotationURI
 
-def getNumSequenceAnnotations():
-  return _libsbol.getNumSequenceAnnotations()
+def getNumSequenceAnnotations(*args):
+  return _libsbol.getNumSequenceAnnotations(*args)
 getNumSequenceAnnotations = _libsbol.getNumSequenceAnnotations
 
 def getSequenceAnnotationStart(*args):
@@ -254,8 +262,8 @@ def isDNAComponentURI(*args):
   return _libsbol.isDNAComponentURI(*args)
 isDNAComponentURI = _libsbol.isDNAComponentURI
 
-def getNumDNAComponents():
-  return _libsbol.getNumDNAComponents()
+def getNumDNAComponents(*args):
+  return _libsbol.getNumDNAComponents(*args)
 getNumDNAComponents = _libsbol.getNumDNAComponents
 
 def getNumSequenceAnnotationsFor(*args):
@@ -270,8 +278,8 @@ def isCollectionURI(*args):
   return _libsbol.isCollectionURI(*args)
 isCollectionURI = _libsbol.isCollectionURI
 
-def getNumCollections():
-  return _libsbol.getNumCollections()
+def getNumCollections(*args):
+  return _libsbol.getNumCollections(*args)
 getNumCollections = _libsbol.getNumCollections
 
 def getNumDNAComponentsIn(*args):
@@ -282,9 +290,9 @@ def dnaComponentInCollection(*args):
   return _libsbol.dnaComponentInCollection(*args)
 dnaComponentInCollection = _libsbol.dnaComponentInCollection
 
-def writeSBOLCore(*args):
-  return _libsbol.writeSBOLCore(*args)
-writeSBOLCore = _libsbol.writeSBOLCore
+def writeDocument(*args):
+  return _libsbol.writeDocument(*args)
+writeDocument = _libsbol.writeDocument
 
 def setDNASequenceNucleotides(*args):
   return _libsbol.setDNASequenceNucleotides(*args)
@@ -366,16 +374,12 @@ def printCollection(*args):
   return _libsbol.printCollection(*args)
 printCollection = _libsbol.printCollection
 
-def readSBOLCore(*args):
-  return _libsbol.readSBOLCore(*args)
-readSBOLCore = _libsbol.readSBOLCore
+def readDocument(*args):
+  return _libsbol.readDocument(*args)
+readDocument = _libsbol.readDocument
 
-def printSBOLCore():
-  return _libsbol.printSBOLCore()
-printSBOLCore = _libsbol.printSBOLCore
-
-def cleanupSBOLCore():
-  return _libsbol.cleanupSBOLCore()
-cleanupSBOLCore = _libsbol.cleanupSBOLCore
+def printDocument(*args):
+  return _libsbol.printDocument(*args)
+printDocument = _libsbol.printDocument
 
 

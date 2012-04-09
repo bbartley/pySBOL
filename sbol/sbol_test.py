@@ -3,6 +3,10 @@ import sbol
 import random
 import string
 
+#####################
+# utility functions
+#####################
+
 URIS_USED = set()
 RANDOM_CHARS = string.ascii_letters
 NUM_FAST_TESTS = 10000
@@ -30,6 +34,10 @@ def random_invalid_position(limit=1000):
         position = -1 * random_valid_position(limit)
     return position
 
+##############
+# unit tests
+##############
+
 class TestSBOLObject(unittest.TestCase):
     def assertReadOnly(self, obj, attr):
         try:
@@ -49,28 +57,20 @@ class TestSBOLObject(unittest.TestCase):
         self.assertEqual(obj.__getattribute__(attr), None)
 
     def setUp(self):
-        try:
-            self.assertEqual(sbol.libsbol.getNumSBOLObjects(), 0)
-        except AssertionError:
-            # this test fails, but don't want to mess up the rest
-            sbol.libsbol.cleanupSBOLCore()
+        self.doc = sbol.Document()
+        self.assertEqual(self.doc.num_sbol_objects, 0)
         self.uris    = []
         self.testees = []
         self.createTestees()
         self.assertEqual(len(self.uris), len(self.testees))
-        self.assertEqual(len(self.uris), sbol.libsbol.getNumSBOLObjects())
-        self.assertEqual(len(self.uris), len(sbol.ALL_SBOL_OBJECTS.sbol_objects))
+        self.assertEqual(len(self.uris), self.doc.num_sbol_objects)
+        self.assertEqual(len(self.uris), sbol.libsbol.getNumSBOLObjects(self.doc.ptr))
 
     def tearDown(self):
-        self.assertEqual(len(self.uris), len(sbol.ALL_SBOL_OBJECTS.sbol_objects))
-        self.assertEqual(len(self.uris), sbol.libsbol.getNumSBOLObjects())
-        del self.testees
-        try:
-            self.assertEqual(sbol.libsbol.getNumSBOLObjects(), 0)
-        except AssertionError:
-            # this test failed, but still want to protect the others
-            sbol.libsbol.cleanupSBOLCore()
-            raise
+        self.assertEqual(len(self.uris), self.doc.num_sbol_objects)
+        self.assertEqual(len(self.uris), sbol.libsbol.getNumSBOLObjects(self.doc.ptr))
+        del self.doc
+        # todo check that everything was deleted?
 
     def createTestees(self):
         for obj in (sbol.DNASequence,
@@ -79,7 +79,7 @@ class TestSBOLObject(unittest.TestCase):
                     sbol.Collection):
             uri = random_uri()
             self.uris.append(uri)
-            self.testees.append(obj(uri))
+            self.testees.append(obj(self.doc, uri))
 
     def testURI(self):
         for n in range( len(self.testees) ):
@@ -94,7 +94,7 @@ class TestSBOLCompoundObject(TestSBOLObject):
                     sbol.Collection):
             uri = random_uri()
             self.uris.append(uri)
-            self.testees.append(obj(uri))
+            self.testees.append(obj(self.doc, uri))
 
     def testDisplayID(self):
         for testee in self.testees:
@@ -112,7 +112,7 @@ class TestDNASequence(TestSBOLObject):
     def createTestees(self):
         uri = random_uri()
         self.uris.append(uri)
-        self.testees.append( sbol.DNASequence(uri) )
+        self.testees.append( sbol.DNASequence(self.doc, uri) )
 
     def testNucleotides(self):
         self.assertReadWrite(self.testees[0], 'nucleotides')
@@ -139,7 +139,7 @@ class TestSequenceAnnotation(TestSBOLObject):
     def createTestees(self):
         uri = random_uri()
         self.uris.append(uri)
-        self.testees.append( sbol.SequenceAnnotation(uri) )
+        self.testees.append( sbol.SequenceAnnotation(self.doc, uri) )
 
     def testPositions(self):
         self.assertPositionWorking(self.testees[0], 'start')
@@ -164,7 +164,7 @@ class TestSequenceAnnotation(TestSBOLObject):
         self.assertEquals(self.testees[0].subcomponent, None)
         uri = random_uri()
         self.uris.append(uri)
-        com = sbol.DNAComponent(uri)
+        com = sbol.DNAComponent(self.doc, uri)
         self.testees[0].subcomponent = com
         self.assertEquals(self.testees[0].subcomponent, com)
 
@@ -173,7 +173,7 @@ class TestSequenceAnnotation(TestSBOLObject):
             self.assertEqual(len(self.testees[0].precedes), n)
             uri = random_uri()
             self.uris.append(uri)
-            ann = sbol.SequenceAnnotation(uri)
+            ann = sbol.SequenceAnnotation(self.doc, uri)
             self.assertFalse(ann in self.testees[0].precedes)
             self.testees[0].precedes += ann
             self.assertTrue(ann in self.testees[0].precedes)
@@ -182,13 +182,13 @@ class TestDNAComponent(TestSBOLCompoundObject):
     def createTestees(self):
         uri = random_uri()
         self.uris.append(uri)
-        self.testees.append( sbol.DNAComponent(uri) )
+        self.testees.append( sbol.DNAComponent(self.doc, uri) )
 
     def testSequence(self):
         self.assertEquals(self.testees[0].sequence, None)
         uri = random_uri()
         self.uris.append(uri)
-        seq = sbol.DNASequence(uri)
+        seq = sbol.DNASequence(self.doc, uri)
         self.testees[0].sequence = seq
         self.assertEquals(self.testees[0].sequence, seq)
 
@@ -197,7 +197,7 @@ class TestDNAComponent(TestSBOLCompoundObject):
             self.assertEqual(len(self.testees[0].annotations), n)
             uri = random_uri()
             self.uris.append(uri)
-            ann = sbol.SequenceAnnotation(uri)
+            ann = sbol.SequenceAnnotation(self.doc, uri)
             self.assertFalse(ann in self.testees[0].annotations)
             self.testees[0].annotations += ann
             self.assertTrue(ann in self.testees[0].annotations)
@@ -206,7 +206,7 @@ class TestCollection(TestSBOLCompoundObject):
     def createTestees(self):
         uri = random_uri()
         self.uris.append(uri)
-        self.testees.append( sbol.Collection(uri) )
+        self.testees.append( sbol.Collection(self.doc, uri) )
 
     def testComponents(self):
         col = self.testees[0]
@@ -214,7 +214,7 @@ class TestCollection(TestSBOLCompoundObject):
             self.assertEqual(len(col.components), n)
             uri = random_uri()
             self.uris.append(uri)
-            com = sbol.DNAComponent(uri)
+            com = sbol.DNAComponent(self.doc, uri)
             self.assertFalse(com in col.components)
             col.components += com
             self.assertTrue(com in col.components)
