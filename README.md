@@ -1,7 +1,7 @@
-libSBOLpy: Python wrapper for libSBOLc
+pySBOL: Python wrapper for libSBOLc
 ======================================
 
-[libSBOLpy](https://github.com/SynBioDex/libSBOLpy) is a wrapper around [libSBOLc](https://github.com/SynBioDex/libSBOLc), the C library for the [Synthetic Biology Open Language (SBOL)](http://www.sbolstandard.org/).
+[pySBOL](https://github.com/SynBioDex/pySBOL) is a wrapper around [libSBOLc](https://github.com/SynBioDex/libSBOLc), the C library for the [Synthetic Biology Open Language (SBOL)](http://www.sbolstandard.org/).
 
 Getting Started
 ---------------
