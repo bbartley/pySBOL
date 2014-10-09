@@ -182,9 +182,27 @@ class Document(object):
 
     def read(self, filename):
         libsbol.readDocument(self.ptr, filename)
+        # Instantiate python proxy objects for each C object in file
+        for i in range(0, libsbol.getNumDNASequences(self.ptr)):
+            ptr = libsbol.getNthDNASequence(self.ptr, i)
+            uri = libsbol.getDNASequenceURI(ptr)
+            seq = DNASequence(self, uri, ptr)
+        for i in range(0, libsbol.getNumSequenceAnnotations(self.ptr)):
+            ptr = libsbol.getNthSequenceAnnotation(self.ptr, i)
+            uri = libsbol.getSequenceAnnotationURI(ptr)
+            seq_annotation = SequenceAnnotation(self, uri, ptr)
+        for i in range(0, libsbol.getNumDNAComponents(self.ptr)):
+            ptr = libsbol.getNthDNAComponent(self.ptr, i)
+            uri = libsbol.getDNAComponentURI(ptr)
+            component = DNAComponent(self, uri, ptr)
+        for i in range(0, libsbol.getNumCollections(self.ptr)):
+            ptr = libsbol.getNthCollection(self.ptr, i)
+            uri = libsbol.getCollectionURI(ptr)
+            collection = SequenceAnnotation(self, uri, ptr)
+
 
     def write(self, filename):
-        libsbol.writeDocument(self.ptr, filename)
+        libsbol.writeDocumentToFile(self.ptr, filename)
 
     @property
     def num_sbol_objects(self):
@@ -218,9 +236,14 @@ class Document(object):
 class DNASequence(object):
     'Wrapper around a libSBOLc DNASequence'
     
-    def __init__(self, doc, uri):
-        # create the C object
-        self.ptr = libsbol.createDNASequence(doc.ptr, uri)
+    def __init__(self, doc, uri, ptr=None):
+        if not ptr:
+            # create the C object if it doesn't exist already
+            self.ptr = libsbol.createDNASequence(doc.ptr, uri)
+        else:
+            # wrap a C object if it already exists
+            self.ptr = ptr
+
         if self.ptr == None:
             raise URIError("Duplicate URI '%s'" % uri)
 
@@ -254,9 +277,14 @@ class DNASequence(object):
 class SequenceAnnotation(object):
     'Wrapper around a libSBOLc SequenceAnnotation'
     
-    def __init__(self, doc, uri):
-        # create the C object
-        self.ptr = libsbol.createSequenceAnnotation(doc.ptr, uri)
+    def __init__(self, doc, uri, ptr=None):
+        if not ptr:
+            # create the C object if it doesn't exist already
+            self.ptr = libsbol.createSequenceAnnotation(doc.ptr, uri)
+        else:
+            # wrap a C object if it already exists
+            self.ptr = ptr
+
         if self.ptr == None:
             raise URIError("Duplicate URI '%s'" % uri)
 
@@ -354,9 +382,13 @@ class SequenceAnnotation(object):
 class DNAComponent(object):
     'Wrapper around a libSBOLc DNAComponent'
 
-    def __init__(self, doc, uri):
-        # create the C object
-        self.ptr = libsbol.createDNAComponent(doc.ptr, uri)
+    def __init__(self, doc, uri, ptr=None):
+        if not ptr:
+            # create the C object if it doesn't exist already
+            self.ptr = libsbol.createDNAComponent(doc.ptr, uri)
+        else:
+            # wrap a C object if it already exists
+            self.ptr = ptr
         if self.ptr == None:
             raise URIError("Duplicate URI '%s'" % uri)
 
@@ -421,9 +453,15 @@ class DNAComponent(object):
 class Collection(object):
     'Wrapper around a libSBOLc Collection'
 
-    def __init__(self, doc, uri):
-        # create the C object
-        self.ptr = libsbol.createCollection(doc.ptr, uri)
+    def __init__(self, doc, uri, ptr=None):
+        if not ptr:
+            # create the C object if it doesn't exist already
+            self.ptr = libsbol.createCollection(doc.ptr, uri)
+        else:
+            # wrap a C object if it already exists
+            self.ptr = ptr
+
+
         if self.ptr == None:
             raise URIError("Duplicate URI '%s'" % uri)
 
