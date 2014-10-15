@@ -325,6 +325,10 @@ def addPrecedesRelationship(*args):
   return _libsbol.addPrecedesRelationship(*args)
 addPrecedesRelationship = _libsbol.addPrecedesRelationship
 
+def removePrecedesRelationship(*args):
+  return _libsbol.removePrecedesRelationship(*args)
+removePrecedesRelationship = _libsbol.removePrecedesRelationship
+
 def printSequenceAnnotation(*args):
   return _libsbol.printSequenceAnnotation(*args)
 printSequenceAnnotation = _libsbol.printSequenceAnnotation
