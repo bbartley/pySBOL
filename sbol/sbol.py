@@ -282,7 +282,7 @@ class SequenceAnnotation(object):
             # create the C object if it doesn't exist already
             self.ptr = libsbol.createSequenceAnnotation(doc.ptr, uri)
         else:
-            # wrap a C object if it already exists
+            # wrap a libSBOLc object if it already exists (most likely due to file import)
             self.ptr = ptr
 
         if self.ptr == None:
@@ -294,10 +294,9 @@ class SequenceAnnotation(object):
 
         # finish the Python proxy
         self.doc._annotations.append(self)
-        fns = (libsbol.addPrecedesRelationship,
-               libsbol.getNumPrecedes,
+        fns = (libsbol.getNumPrecedes,
                libsbol.getNthPrecedes)
-        self.precedes = ExtendableSBOLObjectArray(self, *fns)
+        self.precedes = SBOLObjectArray(self, *fns)
 
     def __del__(self):
         if self.ptr:
@@ -309,6 +308,14 @@ class SequenceAnnotation(object):
 
     def __repr__(self):
         return "<%s uri='%s'>" % (self.__class__.__name__, self.uri)
+
+    def addPrecedes(self, object):
+        libsbol.addPrecedesRelationship(self.ptr, object.ptr)
+
+    def removePrecedes(self, object):
+        libsbol.removePrecedesRelationship(self.ptr, object.ptr)
+
+
 
     @property
     def uri(self):
