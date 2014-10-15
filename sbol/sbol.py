@@ -315,6 +315,11 @@ class SequenceAnnotation(object):
     def removePrecedes(self, object):
         libsbol.removePrecedesRelationship(self.ptr, object.ptr)
 
+    def isUpstream(self, object):
+        return bool(libsbol.precedes(self.ptr, object.ptr))
+
+    def isDownstream(self, object):
+        return bool(libsbol.precedes(object.ptr, self.ptr))
 
 
     @property
