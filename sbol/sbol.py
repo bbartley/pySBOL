@@ -359,6 +359,10 @@ class SequenceAnnotation(object):
         ptr = libsbol.getSequenceAnnotationSubComponent(self.ptr)
         return self.doc._proxy(ptr)
 
+    @subcomponent.setter
+    def subcomponent(self, subcomponent):
+        libsbol.setSequenceAnnotationSubComponent(self.ptr, subcomponent.ptr)
+
     @start.setter
     def start(self, index):
         if index == None:
@@ -461,6 +465,16 @@ class DNAComponent(object):
     @sequence.setter
     def sequence(self, seq):
         libsbol.setDNAComponentSequence(self.ptr, seq.ptr)
+
+    @property
+    def type(self):
+        return libsbol.getDNAComponentType(self.ptr)
+
+    @type.setter
+    def type(self, typ):
+        return libsbol.setDNAComponentType(self.ptr, typ)
+
+
 
 class Collection(object):
     'Wrapper around a libSBOLc Collection'
