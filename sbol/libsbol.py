@@ -113,6 +113,22 @@ def deleteCollection(*args):
   return _libsbol.deleteCollection(*args)
 deleteCollection = _libsbol.deleteCollection
 
+def removeDNASequence(*args):
+  return _libsbol.removeDNASequence(*args)
+removeDNASequence = _libsbol.removeDNASequence
+
+def removeSequenceAnnotation(*args):
+  return _libsbol.removeSequenceAnnotation(*args)
+removeSequenceAnnotation = _libsbol.removeSequenceAnnotation
+
+def removeDNAComponent(*args):
+  return _libsbol.removeDNAComponent(*args)
+removeDNAComponent = _libsbol.removeDNAComponent
+
+def removeCollection(*args):
+  return _libsbol.removeCollection(*args)
+removeCollection = _libsbol.removeCollection
+
 def getDNASequenceNucleotides(*args):
   return _libsbol.getDNASequenceNucleotides(*args)
 getDNASequenceNucleotides = _libsbol.getDNASequenceNucleotides
@@ -140,6 +156,10 @@ getDNAComponentName = _libsbol.getDNAComponentName
 def getDNAComponentDescription(*args):
   return _libsbol.getDNAComponentDescription(*args)
 getDNAComponentDescription = _libsbol.getDNAComponentDescription
+
+def getDNAComponentType(*args):
+  return _libsbol.getDNAComponentType(*args)
+getDNAComponentType = _libsbol.getDNAComponentType
 
 def getCollectionURI(*args):
   return _libsbol.getCollectionURI(*args)
@@ -353,9 +373,17 @@ def setDNAComponentSequence(*args):
   return _libsbol.setDNAComponentSequence(*args)
 setDNAComponentSequence = _libsbol.setDNAComponentSequence
 
+def setDNAComponentType(*args):
+  return _libsbol.setDNAComponentType(*args)
+setDNAComponentType = _libsbol.setDNAComponentType
+
 def addSequenceAnnotation(*args):
   return _libsbol.addSequenceAnnotation(*args)
 addSequenceAnnotation = _libsbol.addSequenceAnnotation
+
+def removeSequenceAnnotationFromDNAComponent(*args):
+  return _libsbol.removeSequenceAnnotationFromDNAComponent(*args)
+removeSequenceAnnotationFromDNAComponent = _libsbol.removeSequenceAnnotationFromDNAComponent
 
 def setSequenceAnnotationSubComponent(*args):
   return _libsbol.setSequenceAnnotationSubComponent(*args)
@@ -380,6 +408,10 @@ setCollectionDescription = _libsbol.setCollectionDescription
 def addDNAComponentToCollection(*args):
   return _libsbol.addDNAComponentToCollection(*args)
 addDNAComponentToCollection = _libsbol.addDNAComponentToCollection
+
+def removeDNAComponentFromCollection(*args):
+  return _libsbol.removeDNAComponentFromCollection(*args)
+removeDNAComponentFromCollection = _libsbol.removeDNAComponentFromCollection
 
 def printCollection(*args):
   return _libsbol.printCollection(*args)
