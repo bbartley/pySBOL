@@ -42,7 +42,7 @@ class SBOLObjectArray(object):
     are created or destroyed.
     '''
 
-    def __init__(self, obj, num, nth):
+    def __init__(self, obj, get_uri, remove, num, nth):
         self.ptr = obj.ptr
         if isinstance(obj, Document):
             self.doc = obj
@@ -51,6 +51,8 @@ class SBOLObjectArray(object):
 
         # Each type of SBOL object has its own array functions,
         # which need to be set for the wrapper to work.
+        self.get_uri_fun = get_uri
+        self.remove_fn = remove
         self.get_num_fn = num
         self.get_nth_fn = nth
 
@@ -59,10 +61,21 @@ class SBOLObjectArray(object):
         return self.get_num_fn(self.ptr)
 
     def __getitem__(self, key):
-        "distinguishes 'array[index]' from 'array[start:end:step]'"
+        """
+        Checks if key is indices or a URI
+        distinguishes 'array[index]' from 'array[start:end:step]
+        """
         if isinstance(key, slice):
             indices = key.indices( len(self) )
-            return self.__getslice__(indices)
+            return [self._getsingle_(n) for n in range(*indices)]
+        elif isinstance(key, str):
+            # Make a list of URIs for the objects in this array
+            uris = [ self.get_uri_fun(self.get_nth_fn(self.ptr, n)) for n in range(self.get_num_fn(self.ptr))]
+            # Then search the list for an element matching the key
+            ind = uris.index(key)
+            ptr = self.get_nth_fn(self.ptr, ind)
+            obj = self.doc._proxy(ptr)
+            return obj
         else: # assume int-like object
             if key < 0: # indexed from end
                 key += len(self)
@@ -77,9 +90,9 @@ class SBOLObjectArray(object):
         obj = self.doc._proxy(ptr)
         return obj
 
-    def __getslice__(self, *indices):
-        "'implements 'array[start:end:step]'"
-        return [self._getsingle_(n) for n in range(*indices)]
+    # def __getslice__(self, *indices):
+    #     "'implements 'array[start:end:step]'"
+    #     return [self._getsingle_(n) for n in range(*indices)]
 
     def __iter__(self):
         "implements 'for obj in array:'"
@@ -113,6 +126,9 @@ class SBOLObjectArray(object):
         "implements 'array' (print in the interpreter)"
         return self.__str__()
 
+    def remove(self, obj):
+        self.remove_fn(self.ptr, obj.ptr)
+
 class ExtendableSBOLObjectArray(SBOLObjectArray):
     '''
     Wrapper around a libSBOLc PointerArray.
@@ -122,8 +138,8 @@ class ExtendableSBOLObjectArray(SBOLObjectArray):
     implemented yet.
     '''
 
-    def __init__(self, obj, add, num, nth):
-        SBOLObjectArray.__init__(self, obj, num, nth)
+    def __init__(self, obj, get_uri, add, remove, num, nth):
+        SBOLObjectArray.__init__(self, obj, get_uri, remove, num, nth)
         self.add_fn = add
 
     def __iadd__(self, obj):
@@ -136,6 +152,9 @@ class ExtendableSBOLObjectArray(SBOLObjectArray):
     def append(self, obj):
         "implements 'array.append(obj)'"
         self.__iadd__(obj)
+
+    # def remove(self, obj):
+    #     self.remove_fn(self.ptr, obj.ptr)
 
     def __extend__(self, obj_list):
         "implements 'array += obj_list'"
@@ -150,22 +169,30 @@ class Document(object):
         self.ptr = libsbol.createDocument()
 
         # create sequences array
-        fns = (libsbol.getNumDNASequences,
+        fns = (libsbol.getDNASequenceURI,
+               libsbol.removeDNASequence,
+               libsbol.getNumDNASequences,
                libsbol.getNthDNASequence)
         self.sequences = SBOLObjectArray(self, *fns)
 
         # create annotations array
-        fns = (libsbol.getNumSequenceAnnotations,
+        fns = (libsbol.getSequenceAnnotationURI,
+               libsbol.removeSequenceAnnotation,
+               libsbol.getNumSequenceAnnotations,
                libsbol.getNthSequenceAnnotation)
         self.annotations = SBOLObjectArray(self, *fns)
 
         # create components array
-        fns = (libsbol.getNumDNAComponents,
+        fns = (libsbol.getDNAComponentURI,
+               libsbol.removeDNAComponent,
+               libsbol.getNumDNAComponents,
                libsbol.getNthDNAComponent)
         self.components = SBOLObjectArray(self, *fns)
 
         # create collections array
-        fns = (libsbol.getNumCollections,
+        fns = (libsbol.getCollectionURI,
+               libsbol.removeCollection,
+               libsbol.getNumCollections,
                libsbol.getNthCollection)
         self.collections = SBOLObjectArray(self, *fns)
 
@@ -294,9 +321,12 @@ class SequenceAnnotation(object):
 
         # finish the Python proxy
         self.doc._annotations.append(self)
-        fns = (libsbol.getNumPrecedes,
+        fns = (None,
+               libsbol.addPrecedesRelationship,
+               libsbol.removePrecedesRelationship,
+               libsbol.getNumPrecedes,
                libsbol.getNthPrecedes)
-        self.precedes = SBOLObjectArray(self, *fns)
+        self.precedes = ExtendableSBOLObjectArray(self, *fns)
 
     def __del__(self):
         if self.ptr:
@@ -309,11 +339,11 @@ class SequenceAnnotation(object):
     def __repr__(self):
         return "<%s uri='%s'>" % (self.__class__.__name__, self.uri)
 
-    def addPrecedes(self, object):
-        libsbol.addPrecedesRelationship(self.ptr, object.ptr)
+    #def addPrecedes(self, object):
+    #    libsbol.addPrecedesRelationship(self.ptr, object.ptr)
 
-    def removePrecedes(self, object):
-        libsbol.removePrecedesRelationship(self.ptr, object.ptr)
+    #def removePrecedes(self, object):
+    #    libsbol.removePrecedesRelationship(self.ptr, object.ptr)
 
     def isUpstream(self, object):
         return bool(libsbol.precedes(self.ptr, object.ptr))
@@ -393,7 +423,10 @@ class SequenceAnnotation(object):
 
     @subcomponent.setter
     def subcomponent(self, com):
-        libsbol.setSequenceAnnotationSubComponent(self.ptr, com.ptr)
+        if com:
+            libsbol.setSequenceAnnotationSubComponent(self.ptr, com.ptr)
+        else:
+            libsbol.setSequenceAnnotationSubComponent(self.ptr, None)
 
 class DNAComponent(object):
     'Wrapper around a libSBOLc DNAComponent'
@@ -413,7 +446,9 @@ class DNAComponent(object):
         self.doc._components.append(self)
 
         # finish the Python proxy
-        fns = (libsbol.addSequenceAnnotation,
+        fns = (libsbol.getSequenceAnnotationURI,
+               libsbol.addSequenceAnnotation,
+               libsbol.removeSequenceAnnotationFromDNAComponent,
                libsbol.getNumSequenceAnnotationsFor,
                libsbol.getNthSequenceAnnotationFor)
         self.annotations = ExtendableSBOLObjectArray(self, *fns)
@@ -496,7 +531,9 @@ class Collection(object):
         self.doc._collections.append(self)
 
         # finish the Python proxy
-        fns = (libsbol.addDNAComponentToCollection,
+        fns = (libsbol.getDNAComponentURI,
+               libsbol.addDNAComponentToCollection,
+               libsbol.removeDNAComponentFromCollection,
                libsbol.getNumDNAComponentsIn,
                libsbol.getNthDNAComponentIn)
         self.components = ExtendableSBOLObjectArray(self, *fns)
