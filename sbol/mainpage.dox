@@ -3,7 +3,7 @@
 /// pySBOL: Python wrapper for libSBOLc
 /// ======================================
 /// 
-/// [pySBOL](https://github.com/SynBioDex/pySBOL) is a wrapper around [libSBOLc](https://github.com/SynBioDex/libSBOLc), the C library for the [Synthetic Biology Open Language (SBOL)](http://www.sbolstandard.org/).
+/// [pySBOL](https://github.com/SynBioDex/pySBOL) is a wrapper around [libSBOLc](http://synbiodex.github.io/libSBOLc/index.html), the C library for the [Synthetic Biology Open Language (SBOL)](http://www.sbolstandard.org/).
 /// 
 /// Getting Started
 /// ---------------
