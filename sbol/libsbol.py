@@ -93,6 +93,18 @@ def createSequenceAnnotation(*args):
   return _libsbol.createSequenceAnnotation(*args)
 createSequenceAnnotation = _libsbol.createSequenceAnnotation
 
+def copyDNAComponent(*args):
+  return _libsbol.copyDNAComponent(*args)
+copyDNAComponent = _libsbol.copyDNAComponent
+
+def copyDNASequence(*args):
+  return _libsbol.copyDNASequence(*args)
+copyDNASequence = _libsbol.copyDNASequence
+
+def copySequenceAnnotation(*args):
+  return _libsbol.copySequenceAnnotation(*args)
+copySequenceAnnotation = _libsbol.copySequenceAnnotation
+
 def deleteDocument(*args):
   return _libsbol.deleteDocument(*args)
 deleteDocument = _libsbol.deleteDocument
