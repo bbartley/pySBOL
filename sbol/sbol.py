@@ -218,6 +218,20 @@ class ExtendableSBOLObjectArray(SBOLObjectArray):
         for obj in obj_list:
             self += obj
 
+## URIToSBOLObjectAssociativeArray
+#
+#class Precedes(ExtendableSBOLObjectArray):
+#    #def __init__(self, doc, uri, get_uri, add, remove, num, nth):
+#    #    obj = doc._getSBOLObjectByURI(doc, uri)        
+#    #    ExtendableSBOLObjectArray.__init__(self, obj, get_uri, remove, num, nth)
+#    
+#    def _getSBOLObjectByURI(doc, uri):
+#        obj = None         
+#        for ann in doc.annotations:
+#            if ann.uri == uri:
+#                obj = ann
+#        return obj
+        
 ## Represents an SBOL document that can be read from or written to a file.
 # It also holds a registry of all the SBOL objects in the document,
 # so it can be used for iterating through all the objects of a certain kind,
@@ -471,7 +485,7 @@ class SequenceAnnotation(object):
 
         # finish the Python proxy
         self.doc._annotations.append(self)
-        fns = (None,
+        fns = (libsbol.getSequenceAnnotationURI,
                libsbol.addPrecedesRelationship,
                libsbol.removePrecedesRelationship,
                libsbol.getNumPrecedes,
