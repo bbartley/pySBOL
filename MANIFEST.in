@@ -1,0 +1,7 @@
+include DESCRIPTION.rst
+include sbol/Doxyfile
+include sbol/*.dox
+include sbol/DoxygenLayout.xml
+include sbol/html/*
+include sbol/examples/*
+include sbol/_libsbol.pyd
