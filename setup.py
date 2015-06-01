@@ -25,11 +25,11 @@ if platform.system() == 'Windows':
     package_data={
         'sbol': ['_libsbol.pyd', 'examples/*'],
     }
-elif platform.system() == 'Mac':
+elif platform.system() == 'Darwin':
    package_data={
-       'sbol': ['_libsbol.pyd', 'examples/*'],
+       'sbol': ['_libsbol.so', 'examples/*'],
     }
-
+print(package_data)
 setup(
     name='pySBOL',
 
