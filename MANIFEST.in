@@ -3,5 +3,5 @@ include sbol/Doxyfile
 include sbol/*.dox
 include sbol/DoxygenLayout.xml
 include sbol/examples/*
-include sbol/_libsbol.so
-include sbol/_libsbol.pyd
+include sbol/bin/Mac_OSX/_libsbol.so
+include sbol/bin/Win_32/_libsbol.pyd

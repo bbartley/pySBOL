@@ -23,11 +23,13 @@ with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
 print(platform.system())
 if platform.system() == 'Windows':
     package_data={
-        'sbol': ['_libsbol.pyd', 'examples/*'],
+        'sbol': ['examples/*'],
+        'bin/Win_32': ['_libsbol.pyd']
     }
 elif platform.system() == 'Darwin':
    package_data={
-       'sbol': ['_libsbol.so', 'examples/*'],
+       'sbol': ['examples/*'],
+       'bin/Mac_OSX': ['_libsbol.so']
     }
 print(package_data)
 setup(
