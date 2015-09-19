@@ -18,6 +18,15 @@ import libsbol
 import sys
 from cStringIO import StringIO
 
+# SO terms
+PROMOTER = "http://purl.obolibrary.org/obo/SO_0000167"
+RBS = "http://purl.obolibrary.org/obo/SO_0000552"
+CDS = "http://purl.obolibrary.org/obo/SO_0000316"
+TERMINATOR = "http://purl.obolibrary.org/obo/SO_0000141"
+USER_DEFINED = "http://purl.obolibrary.org/obo/SO_0000001"
+DESIGN = "http://purl.obolibrary.org/obo/SO_0000546"
+SCAR = "http://purl.obolibrary.org/obo/SO_0001953"
+
 class SBOLError(Exception):     'Problem with SBOL'
 class InternalError(SBOLError): 'Encountered a bug'
 class URIError(SBOLError):      'Invalid URI'
@@ -290,6 +299,11 @@ class Document(object):
         self._components  = []
         ## Registers all PySBOL Collection wrapper objects in Document
         self._collections = []
+
+    ## Delete this Document and all associated objects, freeing libSBOL memory
+    def close(self):
+        if self.ptr:
+            libsbol.deleteDocument(self.ptr)
 
     ## Print summary of Document
     def __str__(self):
@@ -760,6 +774,15 @@ class DNAComponent(object):
     @type.setter
     def type(self, typ):
         return libsbol.setDNAComponentType(self.ptr, typ)
+
+    # TODO: does not copy sublevels contained in SequenceAnnotations
+    def move(self, new_doc):
+        if self.sequence:
+            self.sequence.doc = new_doc
+            new_doc._sequences.append(self.sequence)
+        libsbol.moveDNAComponent(self.ptr, new_doc.ptr)
+        self.doc = new_doc
+        new_doc._components.append(self)
 
 ## Individual instances of the Collection class represent an organizational
 # container which helps users and developers conceptualize a set of

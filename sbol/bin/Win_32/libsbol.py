@@ -436,6 +436,10 @@ readDocument = _libsbol.readDocument
 def printDocument(*args):
   return _libsbol.printDocument(*args)
 printDocument = _libsbol.printDocument
+
+def moveDNAComponent(*args):
+  return _libsbol.moveDNAComponent(*args)
+moveDNAComponent = _libsbol.moveDNAComponent
 # This file is compatible with both classic and new-style classes.
 
 
